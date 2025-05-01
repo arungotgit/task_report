@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %} Edit Card {% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0"><i class="fas fa-edit me-2"></i> Edit Card</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <!-- Serial Number -->
+                    <div class="mb-3">
+                        <label for="serial_number" class="form-label">Sr. No.</label>
+                        <input type="number" class="form-control" id="serial_number" name="serial_number"
+                               value="{{ card.serial_number }}" readonly>
+                    </div>
+
+                    <!-- Title -->
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title"
+                               value="{{ card.title }}" required>
+                    </div>
+
+                    <!-- Post Type -->
+                    <div class="mb-3">
+                        <label for="post_type" class="form-label">Post Type</label>
+                        <select class="form-control" id="post_type" name="post_type" required>
+                            <option value="Advertisement" {% if card.post_type == "Advertisement" %}selected{% endif %}>Advertisement</option>
+                            <option value="Circular" {% if card.post_type == "Circular" %}selected{% endif %}>Circular</option>
+                            <option value="Result" {% if card.post_type == "Result" %}selected{% endif %}>Result</option>
+                            <option value="Other" {% if card.post_type == "Other" %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-control" id="status" name="status" required>
+                            <option value="Active" {% if card.status == "Active" %}selected{% endif %}>Active</option>
+                            <option value="Inactive" {% if card.status == "Inactive" %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+
+                    <!-- Archive Date -->
+                    <div class="mb-3">
+                        <label for="last_date" class="form-label">Last Date</label>
+                        <input type="date" class="form-control" id="last_date" name="last_date"
+                               value="{{ card.last_date|date:'Y-m-d' }}">
+                    </div>
+
+                    <!-- Existing Files -->
+                    <div class="mb-3">
+                        <label for="existing_files" class="form-label">Existing Files:</label>
+                        {% if card.uploaded_files.count > 0 %}
+                            <ul>
+                                {% for uploaded_file in card.uploaded_files.all %}
+                                    <li>
+                                        <a href="{{ uploaded_file.file.url }}" target="_blank">{{ uploaded_file.file.name }}</a>
+                                        <input type="checkbox" name="delete_files" value="{{ uploaded_file.id }}"> Delete
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p>No files uploaded.</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Upload New Files -->
+                    <div class="mb-3">
+                        <label for="new_files" class="form-label">Upload New Files:</label>
+                        <input type="file" class="form-control" id="new_files" name="new_files" multiple accept=".pdf, .doc, .docx, .jpg, .png">
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'card_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i> Update Card
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

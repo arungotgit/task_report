@@ -1,0 +1,125 @@
+
+from django.shortcuts import render, redirect
+from .models import Task
+from django.contrib.auth.decorators import login_required
+
+@login_required  # Ensure only logged-in users can add tasks
+def add_card(request):
+    if request.method == "POST":
+        serial_number = Task.objects.count() + 1  # Auto-assign serial number
+
+        post_type = request.POST.get("post_type")
+        title = request.POST.get("title")
+        status = request.POST.get("status")
+
+        if post_type and title and status:
+            Task.objects.create(
+                serial_number=serial_number,
+                post_type=post_type,
+                title=title,
+                status=status,
+                author=request.user  # Fix IntegrityError by assigning author
+            )
+            return redirect('task_list')
+
+    return render(request, 'add_card.html')
+
+
+
+2. Ensure author Field Exists in models.py
+Check if your Task model has an author field:
+from django.contrib.auth.models import User
+
+class Task(models.Model):
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks")  # Ensure this field exists
+
+
+
+3. Auto-Rearrange Serial Numbers After Deletion
+Modify your adjust_serial_numbers signal in models.py to reorder serial numbers correctly:
+from django.db.models.signals import post_delete, pre_save
+from django.dispatch import receiver
+
+@receiver(post_delete, sender=Task)
+def adjust_serial_numbers(sender, instance, **kwargs):
+    tasks = Task.objects.order_by('serial_number')  # Order by serial number
+    for index, task in enumerate(tasks, start=1):
+        task.serial_number = index  # Reassign correct order
+        task.save()
+
+
+
+from django.db import models
+
+class UploadedFile(models.Model):
+    file = models.FileField(upload_to='uploads/')  # File upload field
+
+class FileCollection(models.Model):
+    title = models.CharField(max_length=100)
+    files = models.ManyToManyField(UploadedFile)  # Allows multiple files to be associated
+
+    def __str__(self):
+        return self.title
+
+
+
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class Task(models.Model):
+    serial_number = models.IntegerField(unique=True, blank=True, null=True)
+    title = models.CharField(max_length=250)
+    post_type = models.CharField(max_length=50, choices=[('Advertisement', 'Advertisement')], default='Advertisement')
+    status = models.CharField(max_length=50, choices=[('Active', 'Active'), ('Inactive', 'Inactive')], default='Active')
+    created_at = models.DateField(auto_now_add=True)
+    updated_at = models.DateField(auto_now=True)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tasks'
+    )
+
+    def __str__(self):
+        return f"{self.serial_number} - {self.title}"
+
+class TaskFile(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='files')
+    file = models.FileField(upload_to='uploads/')
+
+    def __str__(self):
+        return f"File for {self.task.title}"
+
+
+
+
+from django.contrib import admin
+from .models import Task
+from .forms import TaskForm
+
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ('serial_number', 'title', 'post_type', 'status', 'created_at', 'updated_at')
+    list_filter = ('post_type', 'status')
+    search_fields = ('title',)
+
+    def save_model(self, request, obj, form, change):
+        
+        files = request.FILES.getlist('files')
+        for file in files:
+            Task.objects.create(
+                serial_number=obj.serial_number,
+                title=obj.title,
+                post_type=obj.post_type,
+                status=obj.status,
+                author=request.user,  # Fix IntegrityError by assigning author
+
+            )
+        super().save_model(request, obj, form, change)
+
+admin.site.register(Task, TaskAdmin)
+
+
+
+
+    
+    

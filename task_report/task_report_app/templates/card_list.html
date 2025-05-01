@@ -1,0 +1,168 @@
+{% extends 'base.html' %} {% load static %} {% load custom_tags %} 
+{% block content %}
+
+<section class="card__list_section">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>All Cards</h1>
+    <!-- Modified Add Card Button -->
+    {% if user.is_authenticated %}
+    <a href="{% url 'add_card' %}" class="plus-btn" title="Add Task">
+      <i class="fas fa-plus"></i> Add Card
+    </a>
+    {% else %}
+    <a
+      href="{% url 'login' %}?next={% url 'add_card' %}"
+      class="plus-btn"
+      title="Add Task"
+    >
+      <i class="fas fa-plus"></i> Add Card
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- search filter -->
+
+  <form method="get" class="mb-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-4">
+        <input
+          type="text"
+          name="q"
+          class="form-control"
+          placeholder="Search by title..."
+          value="{{ request.GET.q }}"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa fa-search"></i>
+        </button>
+        <a href="{% url 'card_list' %}" class="btn btn-secondary">Reset</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="row">
+    {% for task in cards %}
+    <div class="col-md-4 mb-4 card_viewer_container">
+      <div class="h-100 card_viewer">
+        <div class="card-body card_viewer_body">
+          <div class="d-flex justify-content-between">
+            <p>{{ task.serial_number }}.</p>
+            <p class="card-text">{{ task.post_type }}</p>
+          </div>
+
+          <h5 class="card-title">{{ task.title }}</h5>
+          <div class="d-flex justify-content-between">
+            <div class="card_author">
+              <small class="text-muted">
+                Posted by :
+                <b class="text-capitalize">{{ task.author.username }}</b><br />
+                <b>{{ task.created_at|date:"M d, Y" }}</b>
+              </small>
+            </div>
+            <div class="status">
+              {% if task.status == 'Active' %}
+              <i class="fa-solid fa-circle-check" style="color: green"></i>
+              {% else %}
+              <i class="fa-solid fa-circle-xmark" style="color: red"></i>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% if user.is_authenticated and user == task.author %}
+        <div
+          class="card-footer bg-transparent card_viewer_footer d-flex justify-content-between"
+        >
+          <div class="card_viewer_footer_btns">
+            <a
+              href="{% url 'edit_card' task.id %}"
+              class="edit_btn"
+              title="Edit"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+            </a>
+
+            <!-- <form action="{% url 'delete_card' task.id %}" method="post" class="d-inline" 
+                      onsubmit="return confirm('Are you sure you want to delete this card?');">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-danger">
+                              <i class="fas fa-trash"></i>
+                          </button>
+                      </form> -->
+            <a
+              href="{% url 'delete_card' task.id %}"
+              class="delete_btn d-inline"
+            >
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm" title="Delete">
+                <i
+                  class="fa-solid fa-trash-can faShake"
+                  style="color: #e8172c"
+                ></i>
+              </button>
+            </a>
+          </div>
+          <!-- Loop through all files for the task -->
+          <div class="task_viewer_data">
+            {% if task.uploaded_files.all %}
+            <div class="file-icons">
+              {% for uploaded_file in task.uploaded_files.all %}
+              <a
+                href="{{ uploaded_file.file.url }}"
+                target="_blank"
+                title="{{ uploaded_file.file.name|basename }}"
+              >
+                <i class="fa-solid fa-file-pdf"></i>
+              </a>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-files text-muted">No files uploaded</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+      <h4>No cards yet.</h4>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination controls -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      {% if cards.has_previous %}
+      <li class="page-item">
+        <a
+          class="page-link"
+          href="?page={{ cards.previous_page_number }}"
+          aria-label="Previous"
+        >
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {% endif %} {% for num in cards.paginator.page_range %}
+      <li class="page-item {% if num == cards.number %}active{% endif %}">
+        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+      </li>
+      {% endfor %} {% if cards.has_next %}
+      <li class="page-item">
+        <a
+          class="page-link"
+          href="?page={{ cards.next_page_number }}"
+          aria-label="Next"
+        >
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+</section>
+
+{% endblock %}
