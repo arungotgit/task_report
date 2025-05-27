@@ -9,6 +9,7 @@ class PostType(models.TextChoices):
     Advertisement = 'Advertisement'
     Circular = 'Circular'
     Result = 'Result'
+    Tender = 'Tender'
     Other = 'Other'
 
 class Status(models.TextChoices):

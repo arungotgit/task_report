@@ -193,6 +193,9 @@ a[title]:hover::after {
   gap: 20px;
 }
 .form_submit_btn{
+  display: flex;
+  gap: 20px;
+  justify-content: center;
   width: 10rem;
 }
 .upload_input{
@@ -201,7 +204,9 @@ a[title]:hover::after {
 h2 {
   color: #333;
 }
-
+.nav-link{
+  color: #fff;
+}
 .form-group {
   margin-bottom: 15px;
 }
@@ -231,8 +236,9 @@ h2 {
 .back-link {
   display: block;
   margin-top: 10px;
-  color: #007bff;
+  color: #21346b;
   text-decoration: none;
+  
 }
 
 .back-link:hover {
@@ -281,8 +287,9 @@ button .fa-trash-can:hover {
   padding: 5px 10px;
   color: var(--primary-100);
   align-items: center;
-  background-color: #007bff;
+  background-color:#22356c;
   border-radius: 20px;
+  
 }
 .btn-logout{
   color: #f3f4f6;

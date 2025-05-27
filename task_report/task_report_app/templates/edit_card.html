@@ -2,22 +2,141 @@
 {% block title %} Edit Card {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h2 class="mb-0"><i class="fas fa-edit me-2"></i> Edit Card</h2>
-            </div>
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
+{% block styles %}
+<style>
+    /* Background Styling */
+        body {
+            background: linear-gradient(to right, #1e3c72, #2a5298);
+            font-family: "Poppins", sans-serif;
+            color: white;
+        }
+        /* Glassmorphism Card */
+        .glass-card {
+            max-width: 900px;
+            margin: 5% auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease-in-out;
+        }
+        .glass-card:hover {
+            transform: scale(1.02);
+        }
 
+        /* Inputs & Buttons */
+        .form-control {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.25);
+            outline: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Buttons */
+        .btn-primary, .btn-secondary {
+            font-weight: bold;
+            font-size: 16px;
+            padding: 12px;
+            border-radius: 10px;
+            transition: all 0.3s ease-in-out;
+        }
+        .btn-primary:hover {
+            background: #ff4757;
+            transform: scale(1.05);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+         /* Button Styling */
+        .btn-submit {
+            background: #ff6b6b;
+            border: none;
+            width: 100%;
+            padding: 12px;
+            font-weight: bold;
+            font-size: 18px;
+            border-radius: 10px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .btn-submit:hover {
+            background: #ff4757;
+            transform: scale(1.05);
+        }
+        /* File Upload */
+        .upload-container {
+            text-align: center;
+            cursor: pointer;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            transition: all 0.3s ease-in-out;
+        }
+        .upload-container:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* File Preview */
+        .file-preview {
+            display: none;
+            max-width: 100%;
+            margin-top: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+        }
+</style>
+{% endblock %}
+<div class="glass-card">
+    <h2 class="text-center text-white"><i class="fas fa-edit"></i> Edit Card</h2>
+    <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
                     <!-- Serial Number -->
-                    <div class="mb-3">
-                        <label for="serial_number" class="form-label">Sr. No.</label>
-                        <input type="number" class="form-control" id="serial_number" name="serial_number"
-                               value="{{ card.serial_number }}" readonly>
+                        <div class="mb-3">
+                            <label for="serial_number" class="form-label">Sr. No.</label>
+                            <input type="number" class="form-control" id="serial_number" name="serial_number"
+                                value="{{ card.serial_number }}" readonly>
+                        </div>
+                        <!-- Post Type -->
+                        <div class="mb-3">
+                            <label for="post_type" class="form-label">Post Type</label>
+                            <select class="form-control" id="post_type" name="post_type" required>
+                                <option value="Advertisement" {% if card.post_type == "Advertisement" %}selected{% endif %}>Advertisement</option>
+                                <option value="Circular" {% if card.post_type == "Circular" %}selected{% endif %}>Circular</option>
+                                <option value="Result" {% if card.post_type == "Result" %}selected{% endif %}>Result</option>
+                                <option value="Other" {% if card.post_type == "Other" %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                        <!-- Status -->
+                        <div class="mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-control" id="status" name="status" required>
+                                <option value="Active" {% if card.status == "Active" %}selected{% endif %}>Active</option>
+                                <option value="Inactive" {% if card.status == "Inactive" %}selected{% endif %}>Inactive</option>
+                            </select>
+                        </div>
+                        <!-- Archive Date -->
+                        <div class="mb-3">
+                            <label for="last_date" class="form-label">Last Date</label>
+                            <input type="date" class="form-control" id="last_date" name="last_date"
+                                value="{{ card.last_date|date:'Y-m-d' }}">
+                        </div>
                     </div>
+                    
 
                     <!-- Title -->
                     <div class="mb-3">
@@ -26,36 +145,16 @@
                                value="{{ card.title }}" required>
                     </div>
 
-                    <!-- Post Type -->
-                    <div class="mb-3">
-                        <label for="post_type" class="form-label">Post Type</label>
-                        <select class="form-control" id="post_type" name="post_type" required>
-                            <option value="Advertisement" {% if card.post_type == "Advertisement" %}selected{% endif %}>Advertisement</option>
-                            <option value="Circular" {% if card.post_type == "Circular" %}selected{% endif %}>Circular</option>
-                            <option value="Result" {% if card.post_type == "Result" %}selected{% endif %}>Result</option>
-                            <option value="Other" {% if card.post_type == "Other" %}selected{% endif %}>Other</option>
-                        </select>
-                    </div>
+                    
 
-                    <!-- Status -->
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Status</label>
-                        <select class="form-control" id="status" name="status" required>
-                            <option value="Active" {% if card.status == "Active" %}selected{% endif %}>Active</option>
-                            <option value="Inactive" {% if card.status == "Inactive" %}selected{% endif %}>Inactive</option>
-                        </select>
-                    </div>
+                    
 
-                    <!-- Archive Date -->
-                    <div class="mb-3">
-                        <label for="last_date" class="form-label">Last Date</label>
-                        <input type="date" class="form-control" id="last_date" name="last_date"
-                               value="{{ card.last_date|date:'Y-m-d' }}">
-                    </div>
+                    
 
                     <!-- Existing Files -->
                     <div class="mb-3">
                         <label for="existing_files" class="form-label">Existing Files:</label>
+                        <div class="container">
                         {% if card.uploaded_files.count > 0 %}
                             <ul>
                                 {% for uploaded_file in card.uploaded_files.all %}
@@ -68,24 +167,116 @@
                         {% else %}
                             <p>No files uploaded.</p>
                         {% endif %}
+                        </div>
+                        
                     </div>
 
-                    <!-- Upload New Files -->
-                    <div class="mb-3">
-                        <label for="new_files" class="form-label">Upload New Files:</label>
-                        <input type="file" class="form-control" id="new_files" name="new_files" multiple accept=".pdf, .doc, .docx, .jpg, .png">
-                    </div>
+                    <!-- File Upload Section -->
+        <div class="mb-3">
+            <label class="form-label">Upload File:</label>
+            <div class="upload-container" id="uploadBox">
+                <i class="fas fa-upload"></i> Click or Drag to Upload
+                <input type="file" id="file_upload" name="new_files" class="form-control d-none"
+                    accept=".pdf, .doc, .docx, .jpg, .png" />
+            </div>
+            <div id="filePreviewContainer"></div>
+            <button type="button" id="removeFileBtn" class="btn btn-danger mt-2 d-none">
+                Remove File
+            </button>
+        </div>
 
                     <!-- Buttons -->
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'card_list' %}" class="btn btn-secondary me-md-2">Cancel</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-1"></i> Update Card
-                        </button>
+                     <div class="text-center">
+                        <button type="submit" href="{% url 'card_list' %}" class="btn-primary"><i class="fas fa-save me-1"></i> Update Card</button>
+                        <a href="{% url 'card_list' %}" class="btn btn-secondary">Cancel</a>
                     </div>
                 </form>
-            </div>
-        </div>
-    </div>
+    
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const uploadBox = document.getElementById("uploadBox");
+        const fileInput = document.getElementById("file_upload");
+        const previewContainer = document.getElementById("filePreviewContainer");
+        const removeFileBtn = document.getElementById("removeFileBtn");
+
+        function handleFilePreview(file) {
+            previewContainer.innerHTML = ""; // Clear previous preview
+            removeFileBtn.classList.remove("d-none"); // Show remove button
+
+            if (!file) {
+                removeFileBtn.classList.add("d-none"); // Hide remove button
+                return;
+            }
+
+            const fileType = file.type;
+
+            if (fileType.startsWith("image/")) {
+                const img = document.createElement("img");
+                img.className = "file-preview";
+                img.style.maxWidth = "100%";
+                img.style.borderRadius = "10px";
+                img.style.boxShadow = "0 0 10px rgba(255, 255, 255, 0.4)";
+                const reader = new FileReader();
+                reader.onload = (e) => img.src = e.target.result;
+                reader.readAsDataURL(file);
+                previewContainer.appendChild(img);
+
+            } else if (fileType === "application/pdf") {
+                const embed = document.createElement("embed");
+                embed.src = URL.createObjectURL(file);
+                embed.type = "application/pdf";
+                embed.width = "100%";
+                embed.height = "300px";
+                embed.style.borderRadius = "10px";
+                previewContainer.appendChild(embed);
+
+            } else {
+                const fileLink = document.createElement("p");
+                fileLink.innerHTML = `<i class="fas fa-file"></i> ${file.name} <a href="${URL.createObjectURL(file)}" target="_blank">Download</a>`;
+                previewContainer.appendChild(fileLink);
+            }
+        }
+
+        // ✅ Fix: Clicking the Upload Box Opens File Explorer
+        uploadBox.addEventListener("click", function () {
+            fileInput.click(); // Opens file explorer
+        });
+
+        // Handle file selection (click upload)
+        fileInput.addEventListener("change", function () {
+            const file = this.files[0];
+            handleFilePreview(file);
+        });
+
+        // ✅ Fix: Properly Remove Files Without Breaking Validation
+        removeFileBtn.addEventListener("click", function () {
+            fileInput.value = ""; // Reset file input
+            fileInput.type = "text"; // Trick browser into resetting input
+            fileInput.type = "file"; // Restore file type
+            fileInput.files = null; // Clear selected files
+            previewContainer.innerHTML = ""; // Clear preview
+            removeFileBtn.classList.add("d-none"); // Hide remove button
+        });
+
+        // Drag & Drop functionality
+        uploadBox.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            uploadBox.style.background = "rgba(255, 255, 255, 0.3)";
+        });
+
+        uploadBox.addEventListener("dragleave", () => {
+            uploadBox.style.background = "rgba(255, 255, 255, 0.15)";
+        });
+
+        uploadBox.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            fileInput.files = e.dataTransfer.files;
+            fileInput.dispatchEvent(new Event("change")); // Ensures preview updates
+        });
+    });
+</script>
+
 {% endblock %}

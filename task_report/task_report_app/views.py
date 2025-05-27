@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils.timezone import now
-from .models import Task, UploadedFile
+from .models import Task, UploadedFile, PostType, Status
 from datetime import datetime
 
 def card_list(request):
@@ -72,37 +73,47 @@ def add_card(request):
         last_date = request.POST.get("last_date")
         file = request.FILES.get("file")  # File from the form
 
-        # Validate required fields
-        if post_type and title and status:
+        # Ensure last_date is required only for non-Circular post types
+        if post_type != PostType.Circular.value and not last_date:  # FIXED COMPARISON
+            messages.error(request, "Last Date is required for non-Circular post types.")
+            return render(request, 'add_card.html')
+
+        try:
             task = Task.objects.create(
                 serial_number=serial_number,
                 post_type=post_type,
                 title=title,
                 status=status,
-                last_date=last_date,
+                last_date=last_date if post_type != PostType.Circular.value else None,  # FIXED COMPARISON
                 author=request.user
             )
 
             # Save the uploaded file to UploadedFile model
             if file:
-                UploadedFile.objects.create(
-                    task=task,  # Link to the Task object
-                    file=file
-                )
-            messages.success(request, 'Card added successfully!')
+                UploadedFile.objects.create(task=task, file=file)
+
+            messages.success(request, "Card added successfully!")
             return redirect('card_list')
-            
-        
+
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
+            return render(request, 'add_card.html')
 
     return render(request, 'add_card.html')
 
 
-
 @login_required
 def edit_card(request, card_id):
-    card = get_object_or_404(Task, id=card_id, author=request.user)
+    card = get_object_or_404(Task, id=card_id)
+    if request.user != card.author and not request.user.is_superuser:
+        messages.error(request, "You do not have permission to edit this card.")
+        return redirect("card_list")
+
+
     if request.method == 'POST':
-        # Update basic fields
+        print("Received POST data:", request.POST)  # Debugging step
+
+        # Validate form input
         card.title = request.POST.get('title')
         card.post_type = request.POST.get('post_type')
         card.status = request.POST.get('status')
@@ -110,28 +121,32 @@ def edit_card(request, card_id):
         card.last_date = datetime.strptime(last_date, '%Y-%m-%d').date() if last_date else None
 
         # Delete selected files
-        delete_files = request.POST.getlist('delete_files')  # Get IDs of files to delete
+        delete_files = request.POST.getlist('delete_files')
         if delete_files:
-            UploadedFile.objects.filter(id__in=delete_files).delete()  # Remove files
+            UploadedFile.objects.filter(id__in=delete_files).delete()
 
         # Upload new files
-        new_files = request.FILES.getlist('new_files')  # Handle multiple new files
+        new_files = request.FILES.getlist('new_files')
         for new_file in new_files:
             UploadedFile.objects.create(task=card, file=new_file)
 
         card.save()  # Save all changes
         messages.success(request, 'Card updated successfully!')
         return redirect('card_list') if not card.is_archived else redirect('archive')
+        return render(request, 'edit_card.html', {'card': card})
+
     return render(request, 'edit_card.html', {'card': card})
+
 
 
 @login_required
 def delete_card(request, card_id):
-    card = get_object_or_404(Task, id=card_id, author=request.user)
+    card = get_object_or_404(Task, id=card_id) #if you want deletion to any user
+    # card = get_object_or_404(Task, id=card_id, author=request.user) # if you want to restrict deletion to the author only
     if request.method == 'POST':
         card.delete()
         messages.success(request, 'Card deleted successfully!')
-        return redirect('card_list') if not card.is_archived else redirect('archive_list')
+        return redirect('card_list') if not card.is_archived else redirect('archive')
     return render(request, 'confirm_delete.html', {'card': card})
 
 def user_login(request):
@@ -149,3 +164,33 @@ def user_login(request):
 def user_logout(request):
     logout(request)
     return redirect('card_list')
+
+
+def register_user(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        confirm_password = request.POST.get("confirm_password")
+
+        # Validate password match
+        if password != confirm_password:
+            messages.error(request, "Passwords do not match!")
+            return redirect("register")
+
+        # Check if the username already exists
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username is already taken!")
+            return redirect("register")
+
+        # Create a new user
+        user = User.objects.create_user(username=username, email=email, password=password)
+        user.save()
+
+        # Automatically log in the user after registration
+        login(request, user)
+        messages.success(request, "Registration successful! You are now logged in.")
+        return redirect("card_list")
+
+    return render(request, "register.html")
+

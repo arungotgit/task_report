@@ -1,58 +1,314 @@
-{% extends 'base.html' %}
-{% block title %} Add New Card {% endblock %}
+{% extends 'base.html' %} {% block title %} Add New Card {% endblock %} {% block content %} {% block styles %}
 
-{% block content %}
+<style>
+    /* Background Styling */
+    body {
+        /* background: linear-gradient(to right, #1e3c72, #2a5298); */
+        background: linear-gradient(to right, #8695e8, #180a42);
+        font-family: "Poppins", sans-serif;
+        color: white;
+    }
+
+    /* Glassmorphism Form */
+    .form-container {
+        max-width: 900px;
+        margin: 5% auto;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+        transition: all 0.3s ease-in-out;
+    }
+
+    .form-container:hover {
+        transform: scale(1.02);
+    }
+
+    /* Transparent Input Fields */
+    .form-control {
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: white;
+        font-size: 16px;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease-in-out;
+    }
+
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.25);
+        outline: none;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+
+    /* File Upload Styling */
+    .upload-container {
+        width: 300px;
+        height: 53px;
+        text-align: center;
+        cursor: pointer;
+        padding: 15px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.15);
+        border: 2px dashed rgba(255, 255, 255, 0.5);
+        transition: all 0.3s ease-in-out;
+    }
+
+    .upload-container:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Button Styling */
+    .btn-submit {
+        background: #ff6b6b;
+        border: none;
+        width: 100%;
+        padding: 12px;
+        font-weight: bold;
+        font-size: 18px;
+        border-radius: 10px;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .btn-submit:hover {
+        background: #ff4757;
+        transform: scale(1.05);
+    }
+
+    /* Go Back Link */
+    .back-link {
+        color: white;
+        text-decoration: none;
+        font-size: 16px;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+
+    /* File Preview */
+    .file-preview {
+        display: none;
+        max-width: 100%;
+        margin-top: 10px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    }
+    .messages {
+    list-style: none;
+    padding: 0;
+}
+
+    .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        width: 20%;
+        box-sizing: border-box;
+        font-size: 16px;
+        display: none;
+    }
+
+    .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+    }
+    .alert{
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        width: 25%;
+        box-sizing: border-box;
+        font-size: 16px;
+    }
+</style>
+
+{% endblock %}
+
+
 <div class="form-container">
-    <h2>Add a New Card</h2>
-    <form method="POST" enctype="multipart/form-data"   >
+    <h2 class="text-white"><i class="fas fa-plus-circle"></i> Add a New Card</h2>
+
+    <form method="POST" enctype="multipart/form-data" onsubmit="console.log('Form submitted!'); return true;">
         {% csrf_token %}
-        <div class="form_flex">
-            <div class="form-group">
-                <label for="serial_number">Serial Number:</label>
-                <input type="number" name="serial_number" class="form-control">
+
+        <div class="d-flex justify-content-between">
+            <div class="mb-3">
+                <label for="serial_number" class="form-label">Serial Number:</label>
+                <input type="number" name="serial_number" class="form-control" placeholder="0" />
             </div>
-    
-            <div class="form-group">
-                <label for="post_type">Post Type:</label>
+
+            <div class="mb-3">
+                <label for="post_type" class="form-label">Post Type:</label>
                 <select name="post_type" class="form-control">
                     <option value="Advertisement">Advertisement</option>
                     <option value="Circular">Circular</option>
                     <option value="Result">Result</option>
+                    <option value="Tender">Tender</option>
                     <option value="Other">Other</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="last_date">Last Date:</label>
-                <input type="date" name="last_date" id="last_date" class="form-control">
+            <div class="mb-3">
+                <label for="last_date" class="form-label">Last Date:</label>
+                <input type="date" name="last_date" class="form-control" />
             </div>
-            <div class="form-group">
-                <label for="status">Status:</label>
+            <div class="mb-3">
+                <label for="status" class="form-label">Status:</label>
                 <select name="status" class="form-control">
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                 </select>
             </div>
         </div>
-       
 
-        <div class="form-group">
-            <label for="title">Title:</label>
-            <input type="text" name="title" class="form-control" required>
+    
+
+
+
+
+
+        <div class="mb-3">
+            <label for="title" class="form-label">Title:</label>
+            <input type="text" name="title" class="form-control" placeholder="Choose a title" required />
         </div>
 
-       
-        <div class="form-group">
-            <label for="file_upload">File:</label>
-            <input type="file" name="file" class="form-control upload_input" style="width: 16rem; height: 8rem;" accept=".pdf, .doc, .docx, .jpg, .png">
-            
+        <!-- File Upload Section -->
+        <div class="mb-3">
+            <label class="form-label">Upload File:</label>
+            <div class="upload-container" id="uploadBox">
+                <i class="fas fa-upload"></i> Click or Drag to Upload
+                <input type="file" id="file_upload" name="file" class="form-control d-none"
+                    accept=".pdf, .doc, .docx, .jpg, .png" />
+            </div>
+            <div id="filePreviewContainer"></div>
+            <button type="button" id="removeFileBtn" class="btn btn-danger mt-2 d-none">
+                Remove File
+            </button>
         </div>
-        
-        <div class="form_submit_btn">
-            <button type="submit" class="btn-submit">Add Card</button>
-        </div>
-        
+
+        <button type="submit" class="btn-submit">Add Card</button>
     </form>
 
-    <a href="{% url 'card_list' %}" class="back-link">Back to Task List</a>
+    <a href="{% url 'card_list' %}" class="back-link"><i class="fa-solid fa-arrow-left"></i> Go Back</a>
 </div>
+
+
+
+<!-- JavaScript for Drag & Drop + File Preview -->
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Get Elements
+        const uploadBox = document.getElementById("uploadBox");
+        const fileInput = document.getElementById("file_upload");
+        const previewContainer = document.getElementById("filePreviewContainer");
+        const removeFileBtn = document.getElementById("removeFileBtn");
+
+        // Prevent Errors If Any Element Is Missing
+        if (!uploadBox || !fileInput || !previewContainer || !removeFileBtn) {
+            console.error("One or more required elements are missing in HTML!");
+            return; // Stop execution if elements are missing
+        }
+
+        function handleFilePreview(file) {
+            previewContainer.innerHTML = ""; // Clear previous preview
+            removeFileBtn.classList.remove("d-none"); // Show remove button
+
+            if (!file) {
+                removeFileBtn.classList.add("d-none"); // Hide remove button
+                return;
+            }
+
+            const fileType = file.type;
+
+            if (fileType.startsWith("image/")) {
+                const img = document.createElement("img");
+                img.className = "file-preview";
+                img.src = URL.createObjectURL(file); // Show image preview
+                img.style.maxWidth = "100%";
+                img.style.borderRadius = "10px";
+                img.style.boxShadow = "0 0 10px rgba(255, 255, 255, 0.4)";
+                previewContainer.appendChild(img);
+
+            } else if (fileType === "application/pdf") {
+                const embed = document.createElement("embed");
+                embed.src = URL.createObjectURL(file);
+                embed.type = "application/pdf";
+                embed.width = "100%";
+                embed.height = "300px";
+                embed.style.borderRadius = "10px";
+                previewContainer.appendChild(embed);
+
+            } else {
+                const fileLink = document.createElement("p");
+                fileLink.innerHTML = `<i class="fas fa-file"></i> ${file.name} <a href="${URL.createObjectURL(file)}" target="_blank">Download</a>`;
+                previewContainer.appendChild(fileLink);
+            }
+        }
+
+        // ✅ Clicking Upload Box Opens File Explorer
+        uploadBox.addEventListener("click", function () {
+            fileInput.click();
+        });
+
+        // Handle File Selection
+        fileInput.addEventListener("change", function () {
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                handleFilePreview(file);
+            }
+        });
+
+        // ✅ Properly Remove File Without Breaking Validation
+        removeFileBtn.addEventListener("click", function () {
+            fileInput.value = ""; // Reset file input
+            fileInput.type = "text"; // Trick browser into resetting input
+            fileInput.type = "file"; // Restore file type
+            fileInput.files = null; // Clear selected files
+            previewContainer.innerHTML = ""; // Clear preview
+            removeFileBtn.classList.add("d-none"); // Hide remove button
+        });
+
+        // ✅ Drag & Drop Works
+        uploadBox.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            uploadBox.style.background = "rgba(255, 255, 255, 0.3)";
+        });
+
+        uploadBox.addEventListener("dragleave", () => {
+            uploadBox.style.background = "rgba(255, 255, 255, 0.15)";
+        });
+
+        uploadBox.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            fileInput.files = e.dataTransfer.files;
+            fileInput.dispatchEvent(new Event("change")); // Ensure preview updates
+        });
+    });
+
+
+    setTimeout(function() {
+        let alerts = document.querySelectorAll(".alert");
+        alerts.forEach(alert => alert.style.display = "none");
+    }, 5000);  // Disappear after 5 seconds
+
+</script>
+
 {% endblock %}

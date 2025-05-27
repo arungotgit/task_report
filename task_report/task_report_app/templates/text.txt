@@ -1,125 +1,275 @@
+{% extends 'base.html' %} {% load static %} {% load custom_tags %} 
+{% block content %}
 
-from django.shortcuts import render, redirect
-from .models import Task
-from django.contrib.auth.decorators import login_required
-
-@login_required  # Ensure only logged-in users can add tasks
-def add_card(request):
-    if request.method == "POST":
-        serial_number = Task.objects.count() + 1  # Auto-assign serial number
-
-        post_type = request.POST.get("post_type")
-        title = request.POST.get("title")
-        status = request.POST.get("status")
-
-        if post_type and title and status:
-            Task.objects.create(
-                serial_number=serial_number,
-                post_type=post_type,
-                title=title,
-                status=status,
-                author=request.user  # Fix IntegrityError by assigning author
-            )
-            return redirect('task_list')
-
-    return render(request, 'add_card.html')
-
-
-
-2. Ensure author Field Exists in models.py
-Check if your Task model has an author field:
-from django.contrib.auth.models import User
-
-class Task(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tasks")  # Ensure this field exists
-
-
-
-3. Auto-Rearrange Serial Numbers After Deletion
-Modify your adjust_serial_numbers signal in models.py to reorder serial numbers correctly:
-from django.db.models.signals import post_delete, pre_save
-from django.dispatch import receiver
-
-@receiver(post_delete, sender=Task)
-def adjust_serial_numbers(sender, instance, **kwargs):
-    tasks = Task.objects.order_by('serial_number')  # Order by serial number
-    for index, task in enumerate(tasks, start=1):
-        task.serial_number = index  # Reassign correct order
-        task.save()
-
-
-
-from django.db import models
-
-class UploadedFile(models.Model):
-    file = models.FileField(upload_to='uploads/')  # File upload field
-
-class FileCollection(models.Model):
-    title = models.CharField(max_length=100)
-    files = models.ManyToManyField(UploadedFile)  # Allows multiple files to be associated
-
-    def __str__(self):
-        return self.title
-
-
-
-
-from django.db import models
-from django.contrib.auth.models import User
-
-class Task(models.Model):
-    serial_number = models.IntegerField(unique=True, blank=True, null=True)
-    title = models.CharField(max_length=250)
-    post_type = models.CharField(max_length=50, choices=[('Advertisement', 'Advertisement')], default='Advertisement')
-    status = models.CharField(max_length=50, choices=[('Active', 'Active'), ('Inactive', 'Inactive')], default='Active')
-    created_at = models.DateField(auto_now_add=True)
-    updated_at = models.DateField(auto_now=True)
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='tasks'
-    )
-
-    def __str__(self):
-        return f"{self.serial_number} - {self.title}"
-
-class TaskFile(models.Model):
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='files')
-    file = models.FileField(upload_to='uploads/')
-
-    def __str__(self):
-        return f"File for {self.task.title}"
-
-
-
-
-from django.contrib import admin
-from .models import Task
-from .forms import TaskForm
-
-class TaskAdmin(admin.ModelAdmin):
-    list_display = ('serial_number', 'title', 'post_type', 'status', 'created_at', 'updated_at')
-    list_filter = ('post_type', 'status')
-    search_fields = ('title',)
-
-    def save_model(self, request, obj, form, change):
-        
-        files = request.FILES.getlist('files')
-        for file in files:
-            Task.objects.create(
-                serial_number=obj.serial_number,
-                title=obj.title,
-                post_type=obj.post_type,
-                status=obj.status,
-                author=request.user,  # Fix IntegrityError by assigning author
-
-            )
-        super().save_model(request, obj, form, change)
-
-admin.site.register(Task, TaskAdmin)
-
-
-
-
+{% block styles %}
+<style>
+  body {
+      background: linear-gradient(to right, #141E30, #243B55);
+      color: white;
+      -family: "Poppins", sans-serif;
+      }
+  .card__list_section {
+    padding: 20px;
+    border-radius: 8px;
+  }
+  .card_viewer_container {
+    margin-bottom: 20px;
+  }
+  .card_viewer {
+    background-color: #ffffff;
+    backdrop-filter: blur(15px);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+  }
+  .card_viewer:hover {
+    transform: scale(1.02);
+  }
+  .card_viewer_body {
+    padding: 20px;
+  }
+  .card_viewer_footer {
     
-    
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+  }
+  .card_viewer_footer_btns {
+    display: flex;
+    justify-content: space-between;
+  }
+  .card_viewer_footer_btns a {
+    color: #22356c;
+    text-decoration: none;
+  }
+  .card_viewer_footer_btns a:hover {
+    color: #1f1919;
+  }
+  .file-icons {
+    display: flex;
+    gap: 10px;
+  }
+  .file-icons a {
+    color: #22356c;
+    font-size: 20px;
+  }
+  .file-icons a:hover {
+    color: #1f1919;
+  }
+  .no-files {
+    color: #6c757d;
+  }
+  .status {
+    font-size: 15px;
+  }
+  .status i {
+    margin-left: 5px;
+  }
+  
+  .edit_btn {
+    color: #22356c;
+    text-decoration: none;
+  }
+  .edit_btn:hover {
+    color: #1f1919;
+    transform: scale(1.3);
+    transition: all 0.3s ease;
+  }
+  
+  .card_author {
+    margin-top: 10px;
+  }
+  .card_author small {
+    color: #6c757d;
+  }
+  .card_author b {
+    color: #22356c;
+  }
+  .card-text {
+    font-size: 14px;
+    color: #6c757d;
+  }
+  .card-title {
+    font-size: 18px;
+    color: #22356c;
+  }
+  .card-text,
+  .card-title {
+    margin-bottom: 10px;
+  }
+  .card__list_section h1 {
+    font-size: 24px;
+  }
+  .card__list_section .btn {
+    color: #ffffff;
+    border-radius: 5px;
+    padding: 10px 20px;
+    text-decoration: none;
+  }
+  
+  
+</style>
+{% endblock %}
+
+
+
+<section class="card__list_section">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>All Cards</h1>
+    <!-- Modified Add Card Button -->
+    {% if user.is_authenticated %}
+    <a href="{% url 'add_card' %}" class="plus-btn" title="Add Task" style="color: #fff; font-size: 18px;">
+      <i class="fas fa-plus"></i> Add Card
+    </a>
+    {% else %}
+    <a
+      href="{% url 'login' %}?next={% url 'add_card' %}"
+      class="plus-btn"
+      title="Add Task" style="font-size: 18px;"
+    >
+      <i class="fas fa-plus"></i> Add Card
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- search filter -->
+
+  <form method="get" class="mb-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-md-4">
+        <input
+          type="text"
+          name="q"
+          class="form-control"
+          placeholder="Search by title..."
+          value="{{ request.GET.q }}"
+        />
+      </div>
+
+      <div class="col-md-2">
+        <button type="submit" class="btn" style="background-color: #22356c; color: #ffffff;">
+          <i class="fa fa-search"></i>
+        </button>
+        <a href="{% url 'card_list' %}" class="btn" style="background-color: #1f1919; color: #ffffff;">Reset</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="row">
+    {% for task in cards %}
+    <div class="col-md-4 mb-4 card_viewer_container">
+      <div class="h-100 card_viewer">
+        <div class="card-body card_viewer_body">
+          <div class="d-flex justify-content-between">
+
+              <p style="background-color: #22356c; color: #ffffff; border-radius: 50%; padding: 5px 9px;">{{ task.serial_number }}.</p>
+              
+              <p class="card-text">{{ task.post_type }}</p>
+            <div class="status">
+              {% if task.status == 'Active' %}
+              <i class="fa-solid fa-circle-check" title="Active" style="font-size: 15px; color: green"></i>
+              {% else %}
+              <i class="fa-solid fa-circle-xmark" title="Inactive" style="font-size: 15px; color: red"></i>
+              {% endif %}
+            </div>
+          </div>
+          
+          <h5 class="card-title">{{ task.title }}</h5>
+          
+            <div class="card_author">
+              <small class="text-muted">
+                Posted by :
+                <b class="text-capitalize">{{ task.author.username }}</b><br />
+                <b>{{ task.created_at|date:"M d, Y" }}</b>
+              </small>
+            </div>
+           
+          
+        </div>
+        {% if user.is_authenticated and user == task.author or request.user.is_superuser %}
+        <div
+          class="card-footer bg-transparent card_viewer_footer d-flex justify-content-between"
+        >
+          <div class="card_viewer_footer_btns">
+            <a
+              href="{% url 'edit_card' task.id %}"
+              class="edit_btn"
+              title="Edit"
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+            </a>
+          
+            <a
+              href="{% url 'delete_card' task.id %}"
+              class="delete_btn d-inline"
+            >
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm" title="Delete">
+                <i
+                  class="fa-solid fa-trash-can faShake"
+                  style="color: #e8172c"
+                ></i>
+              </button>
+            </a>
+          </div>
+          <!-- Loop through all files for the task -->
+          <div class="task_viewer_data">
+            {% if task.uploaded_files.all %}
+            <div class="file-icons">
+              {% for uploaded_file in task.uploaded_files.all %}
+              <a
+                href="{{ uploaded_file.file.url }}"
+                target="_blank"
+                title="{{ uploaded_file.file.name|basename }}"
+              >
+                <i class="fa-solid fa-file-pdf"></i>
+              </a>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-files text-muted">No files uploaded</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+      <h4>No cards yet.</h4>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination controls -->
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      {% if cards.has_previous %}
+      <li class="page-item">
+        <a
+          class="page-link"
+          href="?page={{ cards.previous_page_number }}"
+          aria-label="Previous"
+        >
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {% endif %} {% for num in cards.paginator.page_range %}
+      <li class="page-item {% if num == cards.number %}active{% endif %}">
+        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+      </li>
+      {% endfor %} {% if cards.has_next %}
+      <li class="page-item">
+        <a
+          class="page-link"
+          href="?page={{ cards.next_page_number }}"
+          aria-label="Next"
+        >
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+</section>
+
+{% endblock %}

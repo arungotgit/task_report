@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalkBack Screen Reader Example</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        span { cursor: pointer; padding: 2px; }
+        button { padding: 10px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Accessible Screen Reader Demo</h1>
+    <p>
+        Hover over or select a word: 
+        <span class="readText">Accessibility</span>, 
+        <span class="readText">screen</span>, 
+        <span class="readText">reader</span>, 
+        <span class="readText">talk</span>, 
+        <span class="readText">back</span>.
+    </p>
+
+    <button id="toggleReader">Activate Screen Reader</button>
+
+    <script>
+        let isReadingEnabled = false;
+
+        function speakText(text) {
+            let speech = new SpeechSynthesisUtterance(text);
+            window.speechSynthesis.cancel(); // Stop previous speech
+            window.speechSynthesis.speak(speech);
+        }
+
+        document.getElementById('toggleReader').addEventListener('click', function () {
+            isReadingEnabled = !isReadingEnabled;
+            this.textContent = isReadingEnabled ? "Stop Screen Reader" : "Activate Screen Reader";
+            window.speechSynthesis.cancel(); // Stop speech when toggling off
+        });
+
+        document.querySelectorAll('.readText').forEach(element => {
+            element.addEventListener('mouseenter', () => {
+                if (isReadingEnabled) speakText(element.innerText);
+            });
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isReadingEnabled) {
+                let selectedText = window.getSelection().toString().trim();
+                if (selectedText) {
+                    speakText(selectedText);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
